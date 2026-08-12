@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Sun, Package, HardHat, CalendarClock, ChevronDown, Plus, X,
   CheckCircle2, AlertTriangle, Clock, MapPin, Zap, Trash2, Search,
-  Truck, ClipboardCheck, Loader2, Boxes, Minus, Settings, DollarSign, Download
+  Truck, ClipboardCheck, Loader2, Boxes, Minus, Settings, DollarSign, Download,
+  Phone, Mail
 } from "lucide-react";
 
 const PHASES = ["Planning", "Procurement", "Installation", "Commissioning", "Operational"];
@@ -81,6 +82,8 @@ function seedProjects() {
       capacityKw: 2400,
       phase: "Installation",
       ptoDate: "2026-11-15",
+      contactPhone: "+63 917 234 5678",
+      contactEmail: "site.manager@kapalongridge.ph",
       procurement: [
         { id: uid(), name: "PV Modules (540W, x4200)", status: "Delivered", eta: "2026-07-02" },
         { id: uid(), name: "String Inverters (x18)", status: "Delivered", eta: "2026-07-10" },
@@ -107,6 +110,8 @@ function seedProjects() {
       capacityKw: 480,
       phase: "Operational",
       ptoDate: "2026-04-01",
+      contactPhone: "+63 918 345 6789",
+      contactEmail: "facilities@torilrooftop.ph",
       procurement: [
         { id: uid(), name: "PV Modules (450W, x1070)", status: "Delivered", eta: "2026-02-14" },
         { id: uid(), name: "Hybrid Inverters (x4)", status: "Delivered", eta: "2026-02-20" },
@@ -131,6 +136,8 @@ function seedProjects() {
       capacityKw: 1200,
       phase: "Procurement",
       ptoDate: "2027-02-01",
+      contactPhone: "+63 919 456 7890",
+      contactEmail: "coop.admin@panaboagrisolar.ph",
       procurement: [
         { id: uid(), name: "PV Modules (550W, x2180)", status: "Ordered", eta: "2026-09-12" },
         { id: uid(), name: "Central Inverter", status: "Ordered", eta: "2026-09-20" },
@@ -467,12 +474,15 @@ function AddProjectModal({ onClose, onCreate }) {
   const [capacityKw, setCapacityKw] = useState("");
   const [phase, setPhase] = useState("Planning");
   const [ptoDate, setPtoDate] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
 
   const submit = () => {
     if (!name.trim()) return;
     onCreate({
       id: uid(), name: name.trim(), location: location.trim(), capacityKw: Number(capacityKw) || 0,
-      phase, ptoDate, procurement: [], installation: [], maintenance: [],
+      phase, ptoDate, contactPhone: contactPhone.trim(), contactEmail: contactEmail.trim(),
+      procurement: [], installation: [], maintenance: [],
     });
     onClose();
   };
@@ -511,6 +521,16 @@ function AddProjectModal({ onClose, onCreate }) {
             <select style={field} value={phase} onChange={(e) => setPhase(e.target.value)}>
               {PHASES.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label style={label}>Contact number</label>
+              <input style={field} value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="e.g. +63 917 234 5678" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={label}>Contact email</label>
+              <input style={field} type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="e.g. site@example.com" />
+            </div>
           </div>
           <button
             onClick={submit}
@@ -733,6 +753,119 @@ function InventoryCard({ item, update, remove }) {
   );
 }
 
+function ProjectRow({ project: p, isOpen, onToggle, update, remove }) {
+  const [editingContact, setEditingContact] = useState(false);
+  const [phoneDraft, setPhoneDraft] = useState(p.contactPhone || "");
+  const [emailDraft, setEmailDraft] = useState(p.contactEmail || "");
+
+  const overdueCount = p.maintenance.filter((m) => m.status !== "Done" && daysUntil(m.dueDate) < 0).length;
+
+  const openContactEdit = (e) => {
+    e.stopPropagation();
+    setPhoneDraft(p.contactPhone || "");
+    setEmailDraft(p.contactEmail || "");
+    setEditingContact(true);
+  };
+  const saveContact = () => {
+    update({ ...p, contactPhone: phoneDraft.trim(), contactEmail: emailDraft.trim() });
+    setEditingContact(false);
+  };
+
+  const field = { ...mono, fontSize: 12.5, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 5, padding: "6px 9px", color: T.text };
+  const label = { ...mono, fontSize: 10, color: T.textDim, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 4, display: "block" };
+
+  return (
+    <div style={{ background: T.panel, border: `1px solid ${isOpen ? T.borderLight : T.border}`, borderRadius: 10, overflow: "hidden" }}>
+      <div
+        onClick={onToggle}
+        style={{ display: "flex", alignItems: "center", gap: 16, padding: "13px 16px", cursor: "pointer", flexWrap: "wrap" }}
+      >
+        <div style={{ flex: "1 1 200px", minWidth: 160 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ ...display, fontSize: 14.5, color: T.text, fontWeight: 600 }}>{p.name}</span>
+            {overdueCount > 0 && <Badge tone="red">{overdueCount} overdue</Badge>}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3, color: T.textFaint }}>
+            <MapPin size={11} />
+            <span style={{ ...mono, fontSize: 11 }}>{p.location || "—"}</span>
+            <span style={{ ...mono, fontSize: 11, marginLeft: 8 }}>{(p.capacityKw / 1000).toFixed(2)} MW</span>
+          </div>
+          {(p.contactPhone || p.contactEmail) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, flexWrap: "wrap" }}>
+              {p.contactPhone && (
+                <span style={{ ...mono, fontSize: 10.5, color: T.textFaint, display: "flex", alignItems: "center", gap: 4 }}>
+                  <Phone size={10} /> {p.contactPhone}
+                </span>
+              )}
+              {p.contactEmail && (
+                <span style={{ ...mono, fontSize: 10.5, color: T.textFaint, display: "flex", alignItems: "center", gap: 4 }}>
+                  <Mail size={10} /> {p.contactEmail}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <PhaseRail phase={p.phase} onChange={(phase) => update({ ...p, phase })} />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ ...mono, fontSize: 10, color: T.textFaint }}>Target PTO</div>
+            <div style={{ ...mono, fontSize: 11.5, color: T.textDim }}>{fmtDate(p.ptoDate)}</div>
+          </div>
+          <IconBtn title="Edit contact info" onClick={editingContact ? (e) => { e.stopPropagation(); setEditingContact(false); } : openContactEdit}>
+            <Settings size={14} color={editingContact ? T.amber : undefined} />
+          </IconBtn>
+          <IconBtn danger title="Delete project" onClick={(e) => { e.stopPropagation(); remove(p.id); }}>
+            <Trash2 size={14} />
+          </IconBtn>
+          <ChevronDown size={16} color={T.textDim} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+        </div>
+      </div>
+
+      {editingContact && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end", padding: "12px 16px", background: T.panelAlt, borderTop: `1px solid ${T.border}` }}
+        >
+          <div style={{ flex: "1 1 200px" }}>
+            <label style={label}>Contact number</label>
+            <input
+              style={{ ...field, width: "100%" }}
+              value={phoneDraft}
+              onChange={(e) => setPhoneDraft(e.target.value)}
+              placeholder="e.g. +63 917 234 5678"
+              autoFocus
+            />
+          </div>
+          <div style={{ flex: "1 1 220px" }}>
+            <label style={label}>Contact email</label>
+            <input
+              style={{ ...field, width: "100%" }}
+              type="email"
+              value={emailDraft}
+              onChange={(e) => setEmailDraft(e.target.value)}
+              placeholder="e.g. site@example.com"
+            />
+          </div>
+          <button
+            onClick={saveContact}
+            style={{ ...mono, fontSize: 11, fontWeight: 600, background: T.amber, color: T.bg, border: "none", borderRadius: 5, padding: "7px 12px", cursor: "pointer" }}
+          >
+            Save
+          </button>
+          <button
+            onClick={() => setEditingContact(false)}
+            style={{ ...mono, fontSize: 11, background: "transparent", color: T.textDim, border: `1px solid ${T.border}`, borderRadius: 5, padding: "7px 10px", cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {isOpen && <ProjectDetail project={p} update={update} />}
+    </div>
+  );
+}
+
 function StatCard({ icon, label, value, sub, tone }) {
   return (
     <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 10, padding: "14px 16px", flex: 1, minWidth: 130 }}>
@@ -948,42 +1081,16 @@ export default function SolarPortfolioTracker() {
                 No projects match. Try clearing filters, or add a new project.
               </div>
             )}
-            {filtered.map((p) => {
-              const isOpen = expanded === p.id;
-              const overdueCount = p.maintenance.filter((m) => m.status !== "Done" && daysUntil(m.dueDate) < 0).length;
-              return (
-                <div key={p.id} style={{ background: T.panel, border: `1px solid ${isOpen ? T.borderLight : T.border}`, borderRadius: 10, overflow: "hidden" }}>
-                  <div
-                    onClick={() => setExpanded(isOpen ? null : p.id)}
-                    style={{ display: "flex", alignItems: "center", gap: 16, padding: "13px 16px", cursor: "pointer", flexWrap: "wrap" }}
-                  >
-                    <div style={{ flex: "1 1 200px", minWidth: 160 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ ...display, fontSize: 14.5, color: T.text, fontWeight: 600 }}>{p.name}</span>
-                        {overdueCount > 0 && <Badge tone="red">{overdueCount} overdue</Badge>}
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3, color: T.textFaint }}>
-                        <MapPin size={11} />
-                        <span style={{ ...mono, fontSize: 11 }}>{p.location || "—"}</span>
-                        <span style={{ ...mono, fontSize: 11, marginLeft: 8 }}>{(p.capacityKw / 1000).toFixed(2)} MW</span>
-                      </div>
-                    </div>
-                    <PhaseRail phase={p.phase} onChange={(phase) => updateProject({ ...p, phase })} />
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ ...mono, fontSize: 10, color: T.textFaint }}>Target PTO</div>
-                        <div style={{ ...mono, fontSize: 11.5, color: T.textDim }}>{fmtDate(p.ptoDate)}</div>
-                      </div>
-                      <IconBtn danger title="Delete project" onClick={(e) => { e.stopPropagation(); deleteProject(p.id); }}>
-                        <Trash2 size={14} />
-                      </IconBtn>
-                      <ChevronDown size={16} color={T.textDim} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
-                    </div>
-                  </div>
-                  {isOpen && <ProjectDetail project={p} update={updateProject} />}
-                </div>
-              );
-            })}
+            {filtered.map((p) => (
+              <ProjectRow
+                key={p.id}
+                project={p}
+                isOpen={expanded === p.id}
+                onToggle={() => setExpanded(expanded === p.id ? null : p.id)}
+                update={updateProject}
+                remove={deleteProject}
+              />
+            ))}
           </div>
 
           {saveErr && (
