@@ -6,7 +6,10 @@ SQLite database on your machine.
 
 ## Setup
 
-Requires [Node.js](https://nodejs.org) 16 or newer.
+Requires [Node.js](https://nodejs.org) **22.5 or newer** (uses Node's built-in
+SQLite support, so there's nothing to compile — no Python or build tools
+needed, unlike most SQLite npm packages). Check your version with `node -v`;
+if it's older, grab the latest LTS installer from nodejs.org.
 
 ```bash
 npm install

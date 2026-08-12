@@ -1,10 +1,20 @@
-const Database = require("better-sqlite3");
 const path = require("path");
 
-const db = new Database(path.join(__dirname, "solar_portfolio.db"));
+let DatabaseSync;
+try {
+  ({ DatabaseSync } = require("node:sqlite"));
+} catch (e) {
+  console.error(
+    "\nThis app needs Node's built-in SQLite support (node:sqlite), which requires Node 22.5 or newer.\n" +
+    "You're running " + process.version + ". Please install a newer Node.js from https://nodejs.org and try again.\n"
+  );
+  process.exit(1);
+}
 
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+const db = new DatabaseSync(path.join(__dirname, "solar_portfolio.db"));
+
+db.exec("PRAGMA journal_mode = WAL");
+db.exec("PRAGMA foreign_keys = ON");
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS projects (

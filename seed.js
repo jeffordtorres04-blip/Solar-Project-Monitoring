@@ -83,7 +83,8 @@ module.exports = function seed(db) {
     },
   ];
 
-  const insertAll = db.transaction((projects) => {
+  db.exec("BEGIN");
+  try {
     for (const p of projects) {
       const projectId = crypto.randomUUID();
       insertProject.run(projectId, p.name, p.location, p.capacityKw, p.phase, p.ptoDate);
@@ -94,10 +95,12 @@ module.exports = function seed(db) {
         insertMilestone.run(crypto.randomUUID(), projectId, m.name, m.done, m.date);
       }
       for (const m of p.maintenance) {
-        insertMaint.run(crypto.randomUUID(), projectId, m.task, m.dueDate, m.status, m.notes);
+        insertMaint.run(crypto.randomUUID(), projectId, m.task, m.dueDate, m.status, m.notes || "");
       }
     }
-  });
-
-  insertAll(projects);
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
 };

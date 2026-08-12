@@ -8,10 +8,9 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=16"
+    "node": ">=22.5.0"
   },
   "dependencies": {
-    "better-sqlite3": "^11.3.0",
     "cors": "^2.8.5",
     "express": "^4.19.2"
   }
