@@ -314,7 +314,7 @@ function ProjectRow({ project: p, isOpen, onToggle, refresh }) {
             {overdueCount > 0 && <Badge tone="red">{overdueCount} overdue</Badge>}
           </div>
           <div style={{ ...mono, fontSize: 11, color: T.textFaint, marginTop: 3 }}>
-            {p.location || "—"} · {(p.capacityKw / 1000).toFixed(2)} MW
+            {p.location || "—"} · {p.capacityKw.toLocaleString()} kW
           </div>
           {(p.contactPhone || p.contactEmail) && (
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, flexWrap: "wrap" }}>
@@ -628,11 +628,13 @@ function App() {
 
   const filtered = useMemo(() => {
     if (!projects) return [];
-    return projects.filter((p) => {
-      const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || (p.location || "").toLowerCase().includes(query.toLowerCase());
-      const matchP = phaseFilter === "All" || p.phase === phaseFilter;
-      return matchQ && matchP;
-    });
+    return projects
+      .filter((p) => {
+        const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || (p.location || "").toLowerCase().includes(query.toLowerCase());
+        const matchP = phaseFilter === "All" || p.phase === phaseFilter;
+        return matchQ && matchP;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [projects, query, phaseFilter]);
 
   const stats = useMemo(() => {
@@ -647,11 +649,13 @@ function App() {
 
   const filteredInv = useMemo(() => {
     if (!inventory) return [];
-    return inventory.filter((i) => {
-      const matchQ = !invQuery || i.name.toLowerCase().includes(invQuery.toLowerCase()) || (i.sku || "").toLowerCase().includes(invQuery.toLowerCase());
-      const matchC = invCategoryFilter === "All" || i.category === invCategoryFilter;
-      return matchQ && matchC;
-    });
+    return inventory
+      .filter((i) => {
+        const matchQ = !invQuery || i.name.toLowerCase().includes(invQuery.toLowerCase()) || (i.sku || "").toLowerCase().includes(invQuery.toLowerCase());
+        const matchC = invCategoryFilter === "All" || i.category === invCategoryFilter;
+        return matchQ && matchC;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [inventory, invQuery, invCategoryFilter]);
 
   const invStats = useMemo(() => {
@@ -695,7 +699,7 @@ function App() {
         projects && (
           <>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
-              <StatCard label="Portfolio" value={stats.count} sub={`${(stats.totalKw / 1000).toFixed(2)} MW total`} />
+              <StatCard label="Portfolio" value={stats.count} sub={`${stats.totalKw.toLocaleString()} kW total`} />
               <StatCard label="Operational" value={stats.operational} sub="sites generating" tone={T.green} />
               <StatCard label="Due this week" value={stats.upcoming} sub="maintenance tasks" tone={T.blue} />
               <StatCard label="Overdue" value={stats.overdue} sub="needs attention" tone={stats.overdue > 0 ? T.red : T.textDim} />
